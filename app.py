@@ -472,7 +472,7 @@ def reserve():
         taken_count = c.execute("""
             SELECT COUNT(*) FROM reservations
             WHERE date=? AND start_time=?
-              AND status IN ('Pending', 'Approved')
+              AND status IN ('Pending', 'Approved', 'Done')
         """, (selected_date, chosen_time)).fetchone()[0]
 
         if taken_count >= total_rooms:
@@ -605,7 +605,7 @@ def reserve():
             taken_count = c.execute("""
                 SELECT COUNT(*) FROM reservations
                 WHERE date=? AND start_time=?
-                  AND status IN ('Pending','Approved')
+                  AND status IN ('Pending','Approved','Done')
             """, (selected_date, start_str)).fetchone()[0]
 
             # Slot is available if at least one room is still free
