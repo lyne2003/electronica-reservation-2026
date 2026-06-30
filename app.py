@@ -189,8 +189,27 @@ def login():
     if request.method == "GET":
         session.pop('_flashes', None)
 
+    PERSONAL_DOMAINS = {
+        'gmail.com', 'googlemail.com',
+        'hotmail.com', 'hotmail.co.uk', 'hotmail.fr',
+        'outlook.com', 'outlook.fr', 'outlook.co.uk',
+        'live.com', 'live.co.uk', 'live.fr',
+        'yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'ymail.com',
+        'icloud.com', 'me.com', 'mac.com',
+        'aol.com',
+        'protonmail.com', 'proton.me',
+        'mail.com', 'gmx.com', 'gmx.net',
+        'zoho.com'
+    }
+
     if request.method == "POST":
         email = request.form["email"].strip().lower()
+
+        # ✅ Block personal email domains
+        email_domain = email.split('@')[-1] if '@' in email else ''
+        if email_domain in PERSONAL_DOMAINS:
+            flash("❌ Personal email addresses are not allowed. Please use your work email.", "danger")
+            return redirect(url_for("login"))
 
         # ✅ 1️⃣ Admin bypass: check FIRST before any database logic
         if email == "admin@mckinsey-electronics.com":

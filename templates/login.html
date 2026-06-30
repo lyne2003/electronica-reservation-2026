@@ -61,15 +61,18 @@ body {
   <div class="card p-4 text-center">
     <img src="{{ url_for('static', filename='logo.png') }}" alt="McKinsey Logo" class="logo">
 
-<form method="POST" class="text-start">
+<form method="POST" class="text-start" id="loginForm" onsubmit="return validateEmail()">
 
   <small class="d-block mb-2" style="color:#ffffff; opacity:0.9;">
-    Please enter the email address you registered for the Semicon Summit in Dubai with in order to proceed.
+    Please enter your <strong>work email address</strong> to proceed. Personal emails (Gmail, Hotmail, Yahoo, etc.) are not accepted.
   </small>
 
   <div class="mb-3">
     <input type="email" name="email" class="form-control" id="email"
-           placeholder="Email Address" required>
+           placeholder="Work Email Address" required>
+    <div id="emailError" style="color:#ff6b6b; font-size:13px; margin-top:6px; display:none;">
+      ❌ Personal email addresses are not allowed. Please use your work email.
+    </div>
   </div>
 
   <button type="submit" class="btn btn-brand w-100 text-white">Login</button>
@@ -94,6 +97,45 @@ body {
   window.addEventListener('resize', lockBodyHeight);
   window.addEventListener('orientationchange', lockBodyHeight);
   lockBodyHeight();
+
+  // Block personal email domains
+  const BLOCKED_DOMAINS = [
+    'gmail.com', 'googlemail.com',
+    'hotmail.com', 'hotmail.co.uk', 'hotmail.fr',
+    'outlook.com', 'outlook.fr', 'outlook.co.uk',
+    'live.com', 'live.co.uk', 'live.fr',
+    'yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'ymail.com',
+    'icloud.com', 'me.com', 'mac.com',
+    'aol.com',
+    'protonmail.com', 'proton.me',
+    'mail.com', 'gmx.com', 'gmx.net',
+    'zoho.com'
+  ];
+
+  function validateEmail() {
+    const emailInput = document.getElementById('email').value.trim().toLowerCase();
+    const domain = emailInput.split('@')[1];
+    const errorDiv = document.getElementById('emailError');
+
+    if (domain && BLOCKED_DOMAINS.includes(domain)) {
+      errorDiv.style.display = 'block';
+      return false; // block form submission
+    }
+
+    errorDiv.style.display = 'none';
+    return true; // allow submission
+  }
+
+  // Also validate on input change for real-time feedback
+  document.getElementById('email').addEventListener('input', function() {
+    const domain = this.value.trim().toLowerCase().split('@')[1];
+    const errorDiv = document.getElementById('emailError');
+    if (domain && BLOCKED_DOMAINS.includes(domain)) {
+      errorDiv.style.display = 'block';
+    } else {
+      errorDiv.style.display = 'none';
+    }
+  });
 </script>
 
 </body>
