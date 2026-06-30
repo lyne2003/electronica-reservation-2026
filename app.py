@@ -2020,6 +2020,26 @@ def respond_general(reservation_id):
 <p>Thank you,<br>McKinsey Electronics Team</p>
 """
         send_html_email(reservation["requester_email"], subject, body)
+
+        # Create Google Calendar event
+        try:
+            full_date = reservation["date"]
+            start_cal = datetime.strptime(f"{full_date} {reservation['start_time']}", "%Y-%m-%d %H:%M")
+            end_cal = start_cal + timedelta(minutes=20)
+
+            # Build attendees from invites field
+            invites_list = [e.strip() for e in (reservation["invites"] or "").split(",") if e.strip()]
+            attendees = list(dict.fromkeys(invites_list + [reservation["requester_email"]]))
+
+            summary = f"Meeting at Electronica 2026"
+            description = (
+                f"Confirmed meeting for {reservation['requester_email']}.\n"
+                f"Room: {reservation['room_name'] or 'TBD'}"
+            )
+            create_calendar_event(summary, description, start_cal, end_cal, attendees)
+        except Exception as e:
+            print("❌ Calendar event failed (respond_general):", e)
+
         return "<h2>Meeting Confirmed ✅</h2><p>The requester has been notified.</p>"
 
     if decision == "reject":
