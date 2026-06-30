@@ -121,8 +121,12 @@
       <div class="mb-3 mt-3" id="inviteeSection" style="display:none;">
         <label class="form-label fw-bold">Invite People (optional)</label>
         <textarea name="invitee_emails" id="inviteeEmails" class="form-control"
-                  rows="2" placeholder="Enter work email(s), one per line or comma-separated"></textarea>
+                  rows="2" placeholder="Enter work email(s), one per line or comma-separated"
+                  oninput="validateInvitees()"></textarea>
         <small class="text-muted">Personal emails (Gmail, Hotmail, etc.) are not allowed.</small>
+        <div id="inviteeWarning" style="display:none; color:#d00000; font-size:13px; margin-top:5px; font-weight:600;">
+          ⚠️ Personal emails detected and will be removed: <span id="badEmails"></span>
+        </div>
       </div>
       {% endif %}
 
@@ -188,6 +192,40 @@
       });
     });
   });
+</script>
+
+<script>
+const PERSONAL_DOMAINS = new Set([
+  'gmail.com','googlemail.com','hotmail.com','hotmail.co.uk','hotmail.fr',
+  'outlook.com','outlook.fr','outlook.co.uk','live.com','live.co.uk','live.fr',
+  'yahoo.com','yahoo.co.uk','yahoo.fr','ymail.com','icloud.com','me.com',
+  'mac.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com',
+  'gmx.net','zoho.com'
+]);
+
+function validateInvitees() {
+  const textarea = document.getElementById("inviteeEmails");
+  const warning = document.getElementById("inviteeWarning");
+  const badSpan = document.getElementById("badEmails");
+
+  if (!textarea) return;
+
+  const raw = textarea.value;
+  const emails = raw.replace(/\n/g, ",").split(",").map(e => e.trim().toLowerCase()).filter(e => e);
+
+  const bad = emails.filter(e => {
+    const domain = e.includes("@") ? e.split("@")[1] : "";
+    return PERSONAL_DOMAINS.has(domain);
+  });
+
+  if (bad.length > 0) {
+    badSpan.textContent = bad.join(", ");
+    warning.style.display = "block";
+  } else {
+    warning.style.display = "none";
+    badSpan.textContent = "";
+  }
+}
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
