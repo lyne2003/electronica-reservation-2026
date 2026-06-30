@@ -536,6 +536,11 @@ def reserve():
     # BUILD 20-MIN SLOTS for selected date
     available_times = []
     if selected_date:
+        # Count total rooms available
+        total_rooms = c.execute("SELECT COUNT(*) FROM rooms").fetchone()[0]
+        if total_rooms == 0:
+            total_rooms = 1  # fallback: treat as 1 room if none configured
+
         start_minutes = 9 * 60
         end_minutes = 17 * 60
         current = start_minutes
@@ -547,13 +552,15 @@ def reserve():
             start_str = f"{sh:02d}:{sm:02d}"
             end_str = f"{eh:02d}:{em:02d}"
 
-            taken = c.execute("""
-                SELECT 1 FROM reservations
+            # Count how many bookings already exist at this time
+            taken_count = c.execute("""
+                SELECT COUNT(*) FROM reservations
                 WHERE date=? AND start_time=?
                   AND status IN ('Pending','Approved')
-            """, (selected_date, start_str)).fetchone()
+            """, (selected_date, start_str)).fetchone()[0]
 
-            if not taken:
+            # Slot is available if at least one room is still free
+            if taken_count < total_rooms:
                 slot_counter += 1
                 available_times.append({
                     "start": start_str,
