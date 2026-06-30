@@ -1275,7 +1275,7 @@ from google.auth.transport.requests import Request
 CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
-def create_calendar_event(summary, description, start_datetime, end_datetime, attendees, timezone="Asia/Dubai"):
+def create_calendar_event(summary, description, start_datetime, end_datetime, attendees, timezone="Europe/Berlin"):
     # Load creds from Render environment variables
     creds_json = os.environ.get("CALENDAR_CREDS_JSON")
     token_json = os.environ.get("CALENDAR_TOKEN_JSON")
