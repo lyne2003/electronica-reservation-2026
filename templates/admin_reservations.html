@@ -61,8 +61,7 @@
             <th>Meeting Date</th>
             <th>Meeting Time</th>
             <th>Room Nb</th>
-            <th>Requester Name</th>
-            <th>Invitee Name</th>
+            <th>Requester Email</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -88,14 +87,9 @@
               </span>
             </td>
 
-            <!-- 👤 REQUESTER -->
+            <!-- 👤 REQUESTER EMAIL -->
             <td data-label="Requester" class="text-white">
-              {{ r['booker_name'] }}
-            </td>
-
-            <!-- 👤 INVITEE -->
-            <td data-label="Invitee" class="text-white">
-              {{ r['entity_name'] }}
+              {{ r['booker_email'] }}
             </td>
 
             <!-- 🔵 STATUS -->
