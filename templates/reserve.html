@@ -17,7 +17,7 @@
       justify-content: center;
       align-items: center;
       margin: 0;
-      padding: 40px 20px;
+      padding: 80px 20px 40px;
     }
 
     .logo { max-width: 220px; margin-bottom: 25px; }
@@ -60,6 +60,7 @@
   </style>
 </head>
 <body>
+
 <!-- FLASH MESSAGES -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
@@ -73,6 +74,7 @@
   {% endif %}
 {% endwith %}
 
+<!-- NAVBAR -->
 <nav class="navbar navbar-dark bg-dark fixed-top">
   <div class="container-fluid">
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#userMenu">
@@ -82,7 +84,6 @@
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="{{ url_for('reserve') }}">Reserve</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('my_meetings') }}">My Meetings</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('person_requests') }}">Requests For Me</a></li>
         <li class="nav-item"><a class="nav-link text-danger" href="{{ url_for('logout') }}">Logout</a></li>
       </ul>
     </div>
@@ -93,57 +94,25 @@
 
 <h3 class="mb-4 text-center">Reserve a Meeting Slot</h3>
 
-<!-- MAIN FORM -->
+<!-- DATE SELECTION FORM -->
 <form method="get" class="form-card mb-4">
-
-  <!-- COMPANY DROPDOWN -->
-  <label class="form-label">Select Company</label>
-  <select name="company_name" class="form-select" onchange="this.form.submit()">
-    <option value="">Choose company...</option>
-    {% for c in companies|sort(attribute='company_name') %}
-      <option value="{{ c['company_name'] }}"
-        {% if selected_company == c['company_name'] %}selected{% endif %}>
-        {{ c['company_name'] }}
-      </option>
-    {% endfor %}
+  <label class="form-label fw-bold">Select Date</label>
+  <select name="date" class="form-select" onchange="this.form.submit()" required>
+    <option value="">Choose a date...</option>
+    <option value="2026-11-10" {% if selected_date=='2026-11-10' %}selected{% endif %}>November 10, 2026</option>
+    <option value="2026-11-11" {% if selected_date=='2026-11-11' %}selected{% endif %}>November 11, 2026</option>
+    <option value="2026-11-12" {% if selected_date=='2026-11-12' %}selected{% endif %}>November 12, 2026</option>
+    <option value="2026-11-13" {% if selected_date=='2026-11-13' %}selected{% endif %}>November 13, 2026</option>
   </select>
-
-  {% if selected_company %}
-    <!-- PEOPLE DROPDOWN -->
-    <div class="mt-3">
-      <label class="form-label">Select Person</label>
-      <select name="entity_id" class="form-select" required>
-        <option value="">Choose person...</option>
-        {% for p in people %}
-          <option value="{{ p['id'] }}"
-            {% if entity_id and entity_id|int == p['id'] %}selected{% endif %}>
-            {{ p['first_name'] }} {{ p['last_name'] }} ({{ p['position'] }})
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-  {% endif %}
-
-  <div class="mt-3">
-    <label class="form-label">Select Date</label>
-    <select name="date" class="form-select" required>
-      <option value="">Choose...</option>
-      <option value="2025-12-09" {% if selected_date=='2025-12-09' %}selected{% endif %}>December 9, 2025</option>
-      <option value="2025-12-10" {% if selected_date=='2025-12-10' %}selected{% endif %}>December 10, 2025</option>
-    </select>
-  </div>
-
-  <button class="btn btn-brand w-100 text-white mt-3">Show Available Times</button>
 </form>
-
 
 <!-- TIME SLOT SELECTION -->
 {% if available_times %}
   <div class="form-card">
     <h5 class="mb-3 text-center">Select a Time Slot</h5>
+    <p class="text-center text-muted" style="font-size:13px;">{{ selected_date_label }}</p>
 
     <form method="post">
-      <input type="hidden" name="entity_id" value="{{ entity_id }}">
       <input type="hidden" name="date" value="{{ selected_date }}">
       <input type="hidden" name="slot_id" id="slotId">
       <input type="hidden" name="time" id="chosenTime">
@@ -178,15 +147,13 @@
     </form>
   </div>
 
-{% elif entity_id and selected_date %}
+{% elif selected_date %}
   <div class="form-card">
-    <p class="text-center text-muted mb-0">No available times left.</p>
+    <p class="text-center text-muted mb-0">No available time slots for this date.</p>
   </div>
 {% endif %}
 
-
 <script>
-  // Time slot selection
   document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll(".time-slot").forEach(slot => {
       slot.addEventListener("click", function(e) {
