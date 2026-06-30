@@ -717,14 +717,6 @@ def admin_dashboard():
     return render_template("admin_dashboard.html", rooms=rooms, slots=slots)
 
 
-# 1- GET ALL USERS FROM GOOGLE SHEETS
-
-@app.route("/admin/users")
-@admin_required
-def admin_users():
-    users = get_users_from_sheets()
-    return render_template("admin_users.html", users=users)
-
 
 # 2- GET ONLY APPROVED USERS FROM SHEETS AND STORE IN SQLITE
 
@@ -1919,7 +1911,7 @@ def clear_approved_users():
     conn.close()
 
     flash("✅ All approved users have been deleted successfully.", "success")
-    return redirect(url_for("admin_users"))
+    return redirect(url_for("admin_approved_users"))
 
 @app.route("/respond_general/<int:reservation_id>")
 def respond_general(reservation_id):
