@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: electronica-mckinsey
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    plan: starter
+    autoDeploy: true
+    disk:
+      name: electronica-data
+      mountPath: /var/data
+      sizeGB: 1
