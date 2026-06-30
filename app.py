@@ -26,10 +26,14 @@ import json, os
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-creds_json = json.loads(os.environ["GOOGLE_CREDS"])
-CREDS = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
-
-gc = gspread.authorize(CREDS)
+try:
+    creds_json = json.loads(os.environ["GOOGLE_CREDS"])
+    CREDS = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
+    gc = gspread.authorize(CREDS)
+except Exception as e:
+    print(f"⚠️ Google Sheets credentials not loaded: {e}")
+    CREDS = None
+    gc = None
 
 
 SHEET_ID = "16gIa4CoAbnNhlQrqL1xu21VwmAnrqFaQ7KThpxmz8xs"  # part after /d/ and before /edit in the sheet URL
@@ -151,9 +155,98 @@ def verified_required(f):
 
 def get_db():
     DB_PATH = "/var/data/rooms.db"
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def init_db():
+    """Create all tables if they don't exist yet."""
+    conn = get_db()
+    c = conn.cursor()
+    c.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            verified INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS approved_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT,
+            last_name TEXT,
+            email TEXT UNIQUE,
+            company_name TEXT,
+            position TEXT,
+            phone TEXT,
+            passport_number TEXT,
+            passport_place TEXT,
+            passport_expiry TEXT,
+            birth_date TEXT,
+            created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS rooms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS time_slots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room_id INTEGER,
+            date TEXT,
+            start_time TEXT,
+            end_time TEXT,
+            reserved_by INTEGER,
+            FOREIGN KEY (room_id) REFERENCES rooms(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS companies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            description TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS company_contacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_id INTEGER,
+            email TEXT UNIQUE,
+            FOREIGN KEY (company_id) REFERENCES companies(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS company_slots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_id INTEGER,
+            date TEXT,
+            start_time TEXT,
+            end_time TEXT,
+            FOREIGN KEY (company_id) REFERENCES companies(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS reservations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            entity_type TEXT,
+            entity_id INTEGER,
+            date TEXT,
+            start_time TEXT,
+            room_name TEXT,
+            invites TEXT,
+            status TEXT DEFAULT 'Pending',
+            slot_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.commit()
+    conn.close()
+    print("✅ Database initialized.")
+
+# Initialize DB on startup
+with app.app_context():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"⚠️ DB init error: {e}")
 
 @app.route("/debug/schema")
 def debug_schema():
