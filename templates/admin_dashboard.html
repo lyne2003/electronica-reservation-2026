@@ -187,7 +187,7 @@
 
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
 
-    <a href="{{ url_for('admin_approved_users') }}" class="{% if request.endpoint == 'admin_approved_users' %}active{% endif %}">Approved Users</a>
+    <a href="{{ url_for('admin_approved_users') }}" class="{% if request.endpoint == 'admin_approved_users' %}active{% endif %}">Users</a>
     <a href="{{ url_for('admin_rooms') }}" class="{% if request.endpoint == 'admin_rooms' %}active{% endif %}">Rooms</a>
     <a href="{{ url_for('admin_reservations') }}" class="{% if request.endpoint == 'admin_reservations' %}active{% endif %}">Reservations</a>
     <a href="{{ url_for('logout') }}" class="logout text-decoration-none">Logout</a>

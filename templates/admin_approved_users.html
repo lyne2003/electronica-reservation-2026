@@ -1,6 +1,6 @@
 {% extends "admin_dashboard.html" %}
 {% block content %}
-<h2 class="mb-4">Approved Users</h2>
+<h2 class="mb-4">Users</h2>
 
 <!-- ✅ Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -10,12 +10,6 @@
     {% endfor %}
   {% endif %}
 {% endwith %}
-
-<!-- ✅ Import Button e-->
-<form method="POST" class="mb-4">
-  <input type="hidden" name="action" value="import">
-  <button class="btn btn-brand text-white">📥 Import Approved Users from Google Sheets</button>
-</form>
 
 <form action="{{ url_for('clear_approved_users') }}" method="POST"
       onsubmit="return confirm('Are you sure you want to delete ALL approved users? This action cannot be undone.');">
