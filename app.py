@@ -323,19 +323,17 @@ def login():
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        # ✅ Check if email exists in approved_users
-        c.execute("SELECT * FROM approved_users WHERE lower(email)=?", (email,))
-        approved_user = c.fetchone()
-
         # ✅ Check if email exists in company_contacts
         c.execute("SELECT company_id FROM company_contacts WHERE lower(email)=?", (email,))
         contact_user = c.fetchone()
 
-        # ❌ Reject if not in either table
-        if not approved_user and not contact_user:
-            flash("❌ This email is not approved. Please contact the administrator.", "danger")
-            conn.close()
-            return redirect(url_for("login"))
+        # ✅ Auto-register in approved_users if not already there (any work email is welcome)
+        email_prefix = email.split("@")[0]
+        c.execute("""
+            INSERT OR IGNORE INTO approved_users (first_name, last_name, email)
+            VALUES (?, '', ?)
+        """, (email_prefix, email))
+        conn.commit()
 
         # ✅ Insert in local users table if not already there
         c.execute("INSERT OR IGNORE INTO users(email) VALUES(?)", (email,))
