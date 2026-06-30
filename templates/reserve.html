@@ -117,6 +117,15 @@
       <input type="hidden" name="slot_id" id="slotId">
       <input type="hidden" name="time" id="chosenTime">
 
+      {% if is_mckinsey %}
+      <div class="mb-3 mt-3" id="inviteeSection" style="display:none;">
+        <label class="form-label fw-bold">Invite People (optional)</label>
+        <textarea name="invitee_emails" id="inviteeEmails" class="form-control"
+                  rows="2" placeholder="Enter work email(s), one per line or comma-separated"></textarea>
+        <small class="text-muted">Personal emails (Gmail, Hotmail, etc.) are not allowed.</small>
+      </div>
+      {% endif %}
+
       {% set half = (available_times|length + 1) // 2 %}
       <div class="row">
         <div class="col-6">
@@ -170,6 +179,12 @@
         document.getElementById("slotId").value = this.dataset.slotId;
         document.getElementById("chosenTime").value = this.dataset.startTime;
         document.getElementById("reserveBtn").disabled = false;
+
+        // Show invitee section for McKinsey users when a slot is selected
+        const inviteeSection = document.getElementById("inviteeSection");
+        if (inviteeSection) {
+          inviteeSection.style.display = "block";
+        }
       });
     });
   });

@@ -442,8 +442,17 @@ def reserve():
     user_id = user["id"]
     requester_name = user["first_name"] or email.split("@")[0]
 
+    is_mckinsey = email.endswith("@mckinsey-electronics.com")
     selected_date = request.args.get("date")
     selected_date_label = DATE_LABELS.get(selected_date, "")
+
+    PERSONAL_DOMAINS = {
+        'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.co.uk', 'hotmail.fr',
+        'outlook.com', 'outlook.fr', 'outlook.co.uk', 'live.com', 'live.co.uk', 'live.fr',
+        'yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'ymail.com', 'icloud.com', 'me.com',
+        'mac.com', 'aol.com', 'protonmail.com', 'proton.me', 'mail.com', 'gmx.com',
+        'gmx.net', 'zoho.com'
+    }
 
     # POST – Reserve a slot
     if request.method == "POST":
@@ -479,12 +488,32 @@ def reserve():
         taken_rooms = [row["room_name"] for row in c.fetchall()]
         free_room = next((r for r in rooms if r not in taken_rooms), "TBD")
 
+        # Parse optional invitee emails (McKinsey users only)
+        extra_invitees = []
+        if is_mckinsey:
+            raw_invitees = request.form.get("invitee_emails", "")
+            # Split by comma or newline
+            candidates = [e.strip().lower() for e in raw_invitees.replace("\n", ",").split(",") if e.strip()]
+            invalid = []
+            for inv_email in candidates:
+                domain = inv_email.split("@")[-1] if "@" in inv_email else ""
+                if domain in PERSONAL_DOMAINS:
+                    invalid.append(inv_email)
+                else:
+                    extra_invitees.append(inv_email)
+            if invalid:
+                flash(f"⚠️ Personal emails not allowed and were removed: {', '.join(invalid)}", "warning")
+
+        # Build invites string: requester + McKinsey + extra invitees
+        all_invites = list(dict.fromkeys([email, MCKINSEY_EMAIL] + extra_invitees))
+        invites_str = ",".join(all_invites)
+
         # Save reservation (general — no specific invitee)
         c.execute("""
             INSERT INTO reservations
             (user_id, entity_type, entity_id, date, start_time, room_name, invites, status, slot_id)
             VALUES (?, 'general', NULL, ?, ?, ?, ?, 'Pending', ?)
-        """, (user_id, selected_date, chosen_time, free_room, f"{email},{MCKINSEY_EMAIL}", slot_id))
+        """, (user_id, selected_date, chosen_time, free_room, invites_str, slot_id))
         conn.commit()
 
         reservation_id = c.lastrowid
@@ -500,13 +529,14 @@ def reserve():
 
         subject = f"New Meeting Request – {pretty_date} at {chosen_time}"
 
-        # Email to McKinsey team
+        # Email to McKinsey team (with confirm/reject)
         html_mckinsey = f"""
 <p>A new meeting slot has been requested.</p>
 <p><b>Requested by:</b> {email}<br>
 <b>Date:</b> {pretty_date}<br>
 <b>Time:</b> {pretty_time}<br>
 <b>Room:</b> {free_room}</p>
+{"<p><b>Invitees:</b> " + ", ".join(extra_invitees) + "</p>" if extra_invitees else ""}
 <p>Please confirm or reject this request:</p>
 <div style="margin-top:15px;">
   <a href="{approve_link}"
@@ -534,6 +564,20 @@ def reserve():
 <p>Thank you,<br>McKinsey Electronics Team</p>
 """
         send_html_email(email, subject, html_requester)
+
+        # Send meeting details to extra invitees (if any)
+        if extra_invitees:
+            html_invitee = f"""
+<p>You have been invited to a meeting.</p>
+<p><b>Requested by:</b> {email}<br>
+<b>Date:</b> {pretty_date}<br>
+<b>Time:</b> {pretty_time}<br>
+<b>Room:</b> {free_room}</p>
+<p>This meeting is pending confirmation from McKinsey Electronics.</p>
+<p>Thank you,<br>McKinsey Electronics Team</p>
+"""
+            for inv in extra_invitees:
+                send_html_email(inv, subject, html_invitee)
 
         flash("✅ Meeting request submitted! You will receive a confirmation email shortly.", "success")
         return redirect(url_for("my_meetings"))
@@ -581,7 +625,8 @@ def reserve():
         "reserve.html",
         selected_date=selected_date,
         selected_date_label=selected_date_label,
-        available_times=available_times
+        available_times=available_times,
+        is_mckinsey=is_mckinsey
     )
 
 def send_html_email(to_email, subject, html_body):
