@@ -154,8 +154,15 @@ def verified_required(f):
 #     return conn
 
 def get_db():
-    DB_PATH = "/var/data/rooms.db"
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    # Use /var/data if the Render persistent disk is mounted, otherwise fall back to local
+    preferred = "/var/data/rooms.db"
+    fallback = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.db")
+
+    if os.path.isdir("/var/data"):
+        DB_PATH = preferred
+    else:
+        DB_PATH = fallback
+
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
