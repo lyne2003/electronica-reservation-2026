@@ -455,14 +455,19 @@ def reserve():
             flash("❌ Please select a time slot.", "danger")
             return redirect(url_for("reserve", date=selected_date))
 
-        # Check if this slot is already taken (general booking)
-        c.execute("""
-            SELECT id FROM reservations
+        # Count total rooms and how many are already taken at this time
+        total_rooms = c.execute("SELECT COUNT(*) FROM rooms").fetchone()[0]
+        if total_rooms == 0:
+            total_rooms = 1
+
+        taken_count = c.execute("""
+            SELECT COUNT(*) FROM reservations
             WHERE date=? AND start_time=?
               AND status IN ('Pending', 'Approved')
-        """, (selected_date, chosen_time))
-        if c.fetchone():
-            flash("❌ This slot is already booked. Please choose another.", "danger")
+        """, (selected_date, chosen_time)).fetchone()[0]
+
+        if taken_count >= total_rooms:
+            flash("❌ This slot is fully booked. Please choose another.", "danger")
             return redirect(url_for("reserve", date=selected_date))
 
         # Assign a free room
